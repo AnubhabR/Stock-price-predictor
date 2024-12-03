@@ -18,16 +18,14 @@ itc_stocks["Target"] = (itc_stocks["Tomorrow"] > itc_stocks["Close"].astype(int)
 model = RandomForestClassifier(n_estimators=500, min_samples_split=3, random_state=1)
 predictors = ["Close", "Volume", "Open", "High", "Low"]
 
-
 def predict(train, test, predictors, model):
     model.fit(train[predictors], train["Target"])
-    preds = model.predict_proba(test[predictors]) [:,1]
+    preds = model.predict_proba(test[predictors])[:, 1]
     preds[preds >= 0.7] = 1
     preds[preds < 0.7] = 0
     preds = pd.Series(preds, index=test.index, name="Predictions")
     combined = pd.concat([test["Target"], preds], axis=1)
     return combined
-
 
 def backtest(data, model, predictors, start=2500, step=250):
     all_predictions = []
@@ -39,8 +37,7 @@ def backtest(data, model, predictors, start=2500, step=250):
         all_predictions.append(predictions)
     return pd.concat(all_predictions)
 
-
-horizons = [2,5,60,250,1000]
+horizons = [2, 5, 60, 250, 1000]
 new_predictors = []
 
 for horizon in horizons:
@@ -55,5 +52,16 @@ for horizon in horizons:
 
 itc_stocks = itc_stocks.dropna()
 predictions = backtest(itc_stocks, model, predictors)
+
+# Print precision score and value counts
 print(precision_score(predictions["Target"], predictions["Predictions"]))
 print(predictions["Predictions"].value_counts())
+
+# New output: whether stock price will go up and the predicted price
+last_price = itc_stocks["Close"].iloc[-1]
+predicted_movement = "up" if predictions["Predictions"].iloc[-1] == 1 else "down"
+predicted_price = itc_stocks["Tomorrow"].iloc[-1]  # Predicted next day's price
+
+print(f"Predicted stock movement: {predicted_movement}")
+print(f"Predicted price for next day: {predicted_price}")
+
